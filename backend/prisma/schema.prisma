@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  avatarUrl String?
+  role      Int
+
+  ownedEquipment        Equipment[] @relation("OwnerEquipment")
+  defaultEquipmentTech Equipment[] @relation("DefaultTechnician")
+
+  createdRequests  MaintenanceRequest[] @relation("CreatedRequests")
+  assignedRequests MaintenanceRequest[] @relation("AssignedRequests")
+
+  teamMemberships TeamMember[]
+  performedLogs   MaintenanceLog[]
+
+  createdAt DateTime @default(now())
+
+  @@index([role])
+}
+
+model Department {
+  id   String @id @default(uuid())
+  name String @unique
+
+  equipment Equipment[]
+}
+
+model MaintenanceTeam {
+  id   String @id @default(uuid())
+  name String @unique
+
+  members   TeamMember[]
+  equipment Equipment[]
+  requests  MaintenanceRequest[]
+
+  createdAt DateTime @default(now())
+}
+
+model TeamMember {
+  id     String @id @default(uuid())
+  teamId String
+  userId String
+
+  team MaintenanceTeam @relation(fields: [teamId], references: [id])
+  user User            @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+}
+
+model Equipment {
+  id           String @id @default(uuid())
+  name         String
+  serialNumber String @unique
+  category     String
+  location     String
+
+  purchaseDate   DateTime?
+  warrantyExpiry DateTime?
+
+  departmentId  String?
+  ownerUserId   String?
+  teamId        String
+  defaultTechId String?
+
+  isScrapped Boolean @default(false)
+
+  department Department?     @relation(fields: [departmentId], references: [id])
+  owner      User?           @relation("OwnerEquipment", fields: [ownerUserId], references: [id])
+  team       MaintenanceTeam @relation(fields: [teamId], references: [id])
+
+  technician User? @relation("DefaultTechnician", fields: [defaultTechId], references: [id])
+
+  requests MaintenanceRequest[]
+
+  createdAt DateTime @default(now())
+
+  @@index([teamId])
+  @@index([departmentId])
+  @@index([isScrapped])
+}
+
+model MaintenanceRequest {
+  id String @id @default(uuid())
+
+  subject     String
+  description String?
+
+  requestType Int
+  status      Int
+
+  equipmentId  String
+  teamId       String
+  createdById  String
+  assignedToId String?
+
+  scheduledDate DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  durationHours Float?
+
+  equipment Equipment       @relation(fields: [equipmentId], references: [id])
+  team      MaintenanceTeam @relation(fields: [teamId], references: [id])
+
+  createdBy User @relation("CreatedRequests", fields: [createdById], references: [id])
+  assignedTo User? @relation("AssignedRequests", fields: [assignedToId], references: [id])
+
+  logs MaintenanceLog[]
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([teamId])
+  @@index([scheduledDate])
+  @@index([equipmentId])
+}
+
+model MaintenanceLog {
+  id String @id @default(uuid())
+
+  requestId String
+  actionCode Int
+  oldValue String?
+  newValue String?
+  performedById String
+
+  request MaintenanceRequest @relation(fields: [requestId], references: [id])
+  performedBy User           @relation(fields: [performedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+}
