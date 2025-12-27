@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import "dotenv/config";
 
 let prisma: PrismaClient;
 // @ts-ignore
@@ -17,6 +18,7 @@ async function testConnection() {
   try {
     await prisma.$connect();
     console.log("✅ Database connected successfully");
+
   } catch (err) {
     console.error("❌ Database connection failed:", err);
   }
@@ -25,3 +27,4 @@ async function testConnection() {
 testConnection();
 
 export default prisma;
+

@@ -11,9 +11,8 @@ model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
-  avatarUrl String?
-  role      Int
-
+  role      Int     @default(0) // 0: Regular User, 1: Technician, 2: Manager, 3: Admin
+ password  String     
   ownedEquipment        Equipment[] @relation("OwnerEquipment")
   defaultEquipmentTech Equipment[] @relation("DefaultTechnician")
 
